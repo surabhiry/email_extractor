@@ -1,0 +1,202 @@
+import tkinter as tk
+import re
+from tkinter import *
+from tkinter import PhotoImage
+import smtplib as s
+from tkinter import messagebox
+import tkinter.filedialog as filedialog
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
+
+
+window = tk.Tk()
+window.geometry('800x650')
+window.resizable(0, 0)
+window.iconbitmap("")
+
+
+bg=PhotoImage(file=r"C:\Users\vikash\Desktop\SEM-4\image7.png")
+my_canvas= Canvas(window,width=800,height=650)
+my_canvas.pack(fill="both",expand="true")
+my_canvas.create_image(1,1,image= bg,anchor="nw" )
+my_canvas.create_text(400,80,text="EMAIL EXTRACTOR",font=("Helvetica", 30),fill="white")
+
+#ENTER LINK
+#label
+my_canvas.create_text(120,157,text="Enter link :",font=("Arial",14),fill="white")
+#entry
+entry1 = Entry(window,width=80,bg="lavender")
+entry1.place(x=200,y=150,height=20)
+
+
+global emails
+#EXTRACT BUTTON
+
+def btn1():
+    if ((len(entry1.get()) == 0)):
+        messagebox.showinfo("Warning!", "Above field required!!")
+    else:
+        from bs4 import BeautifulSoup  
+        import requests  
+        import requests.exceptions  
+        from urllib.parse import urlsplit  
+        from collections import deque  
+        import pandas as pd
+        import re
+        x=entry1.get()
+        new_urls = deque([x])
+        processed_urls = set()
+        emails = set()  
+        while len(new_urls):  
+            url = new_urls.popleft()     
+            try:  
+                response = requests.get(url)  
+            except (requests.exceptions.MissingSchema, requests.exceptions.ConnectionError):
+                continue
+        parts = urlsplit(url)  
+        base_url = "{0.scheme}://{0.netloc}".format(parts)  
+        path = url[:url.rfind('/')+1] if '/' in parts.path else url 
+
+        new_emails = set(re.findall(r"[a-z0-9\.\-+_]+@[a-z0-9\.\-+_]+\.[a-z]+", response.text, re.I))  
+        emails.update(new_emails)  
+        soup = BeautifulSoup(response.text)  
+
+        for anchor in soup.find_all("a"):  
+            link = anchor.attrs["href"] if "href" in anchor.attrs else ''  
+        if link.startswith('/'):  
+            link = base_url + link  
+        elif not link.startswith('http'):  
+            link = path + link  
+        if not link in new_urls and not link in processed_urls:  
+            new_urls.append(link)
+        
+        for email in emails:  
+            new_list = [*emails]
+            df = pd.DataFrame(new_list)
+            df.columns = ['Emails']
+            writer = pd.ExcelWriter(r'C:\Users\vikash\Desktop\SEM-4\Email_Address.xlsx', engine='xlsxwriter')
+            df.to_excel(writer, sheet_name='', index=False)
+            writer.save()
+            #text1.insert(1, *emails)
+        import xlrd
+        loc = (r'C:\Users\vikash\Desktop\SEM-4\Email_Address.xlsx')
+        wb = xlrd.open_workbook(loc)
+        sheet = wb.sheet_by_index(0)
+        sheet.cell_value(0, 0)
+        for i in range(1,sheet.nrows):
+            text1.insert(1, sheet.cell_value(i,0))
+            #print(sheet.cell_value(i, 0))
+    
+button2 = Button(window, text="EXTRACT",font = "Times 12", fg="black",bg="light blue",command=btn1,height = 1, width = 10)
+button2.place(x=300,y=200)
+
+
+#CLEAR BUTTON
+def delete():
+    entry1.delete(0,'end')
+    return
+
+button3 = Button(window, text="CLEAR", fg="black",font = "Times 12",bg="light blue",command=delete,height = 1, width = 10)
+button3.place(x=480,y=200)
+
+#EXTRACTED EMAIL
+#label
+my_canvas.create_text(120,255,text="Emails :",font=("Arial",14),fill="white")
+text1=Listbox(window,width=80,state='normal',bg="lavender",justify=LEFT)
+text1.place(x=200,y=250,height=150)
+
+
+#SUBJECT
+#label
+my_canvas.create_text(120,436,text="Subject :",font=("Arial",14),fill="white")
+#entry
+entry2 = Entry(window,width=80,bg="lavender")
+entry2.place(x=200,y=430)
+
+#BODY
+#label
+my_canvas.create_text(120,475.5,text="Body :",font=("Arial",14),fill="white")
+#entry
+entry3 = Text(window,width=60,bg="lavender")
+entry3.place(x=200,y=470,height=75)
+
+#ATTACHEMNET
+#label
+my_canvas.create_text(120,570,text="Attach :",font=("Arial",14),fill="white")
+#browse button
+def input():
+    input_path = tk.filedialog.askopenfilename()
+    input_entry.config(state='normal')
+    input_entry.delete(1, tk.END)
+    input_entry.insert(0, input_path)
+    input_entry.config(state='disabled')
+input_path = Label(window, text="Input File Path:")
+input_entry = Entry(window, width=65,bg="lavender")
+
+browse1 = Button(window, text="  Browse  ",font = "Times 8",fg="black",bg="light blue",command= input,height =1, width = 10)
+
+
+input_path.pack(pady=5)
+input_entry.place(x=200,y=565)
+browse1.place(x=620,y=565)
+
+
+#ALL CLEAR BUTTON
+def delete():
+    entry1.delete(0,'end')
+    entry2.delete(0,'end')
+    entry3.delete(0,'end')
+    input_entry.delete(0,'end')
+    text1.delete(0,END)
+    return
+button5 = Button(window, text="CLEAR ALL",font = "Times 12", fg="black",bg="light blue",command=delete,height = 1, width = 10)
+button5.place(x=300,y=600)
+
+global list_address
+#SEND BUTTON
+
+def search():
+    if ((len(entry1.get()) == 0)or(len(entry2.get()) == 0)):
+        messagebox.showinfo("Warning!", " Enter the details properly")
+    else:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        from email.mime.base import MIMEBase
+        from email import encoders
+        import pandas as pd
+        SenderAddress = "darshyadav06@gmail.com"
+        password = "darsh@23"
+        e = pd.read_excel(r'C:\Users\vikash\Desktop\SEM-4\Email_Address.xlsx')
+        server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+        server.login(SenderAddress, password)
+        body = entry3.get("1.0",END)
+        subject = entry2.get()
+        fromaddr='darshyadav06@gmail.com'
+#         for index, row in e.iterrows():
+#             print (row["Emails"])
+        msg = MIMEMultipart()
+        msg['From'] = fromaddr
+        msg['Subject'] = entry2.get()
+        msg.attach(MIMEText(body, 'plain'))
+        filename = input_entry.get()
+        toaddr = e['Emails'].values
+        attachment = open(filename, "rb")
+        part = MIMEBase('application', 'octet-stream')
+        part.set_payload((attachment).read())
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', "attachment; filename= %s" % filename)
+        msg.attach(part)
+        text = msg.as_string()
+        server.sendmail(fromaddr, toaddr, text)
+        server.quit()
+        messagebox.showinfo("Succesfull", "Emails send Succesfully")
+#         print("Emails sent successfully")
+        
+
+button4 = Button(window, text=" SEND  ",font = "Times 12",fg="black",bg="light blue",command=search ,height = 1, width = 10)
+button4.place(x=480,y=600)
+
+window.mainloop()
