@@ -167,14 +167,14 @@ def search():
         from email.mime.base import MIMEBase
         from email import encoders
         import pandas as pd
-        SenderAddress = "darshyadav06@gmail.com"
-        password = "darsh@23"
+        SenderAddress = *your email adress*
+        password = *your password*
         e = pd.read_excel(r'C:\Users\vikash\Desktop\SEM-4\Email_Address.xlsx')
         server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
         server.login(SenderAddress, password)
         body = entry3.get("1.0",END)
         subject = entry2.get()
-        fromaddr='darshyadav06@gmail.com'
+        fromaddr=*your email address*
 #         for index, row in e.iterrows():
 #             print (row["Emails"])
         msg = MIMEMultipart()
